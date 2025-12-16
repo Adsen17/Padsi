@@ -1,4 +1,7 @@
+// pages/api/products.js
 import { getDB } from "../../lib/db";
+
+const LOW_STOCK_THRESHOLD = 20;
 
 export default async function handler(req, res) {
   try {
@@ -8,7 +11,15 @@ export default async function handler(req, res) {
       const [rows] = await db.execute(
         "SELECT id, name, quantity, price, description, created_at FROM products ORDER BY id ASC"
       );
-      return res.status(200).json(rows);
+
+      // tambahin flag stok rendah
+      const withLowStockFlag = rows.map((p) => ({
+        ...p,
+        isLowStock: Number(p.quantity) < LOW_STOCK_THRESHOLD,
+        lowStockThreshold: LOW_STOCK_THRESHOLD,
+      }));
+
+      return res.status(200).json(withLowStockFlag);
     }
 
     if (req.method === "POST") {
